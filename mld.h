@@ -130,5 +130,14 @@ void mld_register_root_object (object_db_t *object_db,
 
 void set_mld_object_as_global_root(object_db_t *object_db, void *obj_ptr);
 
+void mld_set_dynamic_object_as_root(object_db_t *object_db, void *obj_ptr);
+
+/* Add support for primitive data types */
+void mld_init_primitive_data_types_support(struct_db_t *struct_db);
+
+void run_mld_algorithm(object_db_t *object_db);
+
+void report_leaked_objects(object_db_t *object_db);
+
 #endif /* __MLD__ */
 

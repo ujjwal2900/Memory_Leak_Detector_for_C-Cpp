@@ -74,6 +74,15 @@ struct_db_rec_t *struct_db_look_up(struct_db_t *struct_db, char *struct_name)
     return NULL;
 }
 
+/* Add support for primitive data types */
+void mld_init_primitive_data_types_support(struct_db_t *struct_db)
+{
+    REG_STRUCT(struct_db, int, 0);
+    REG_STRUCT(struct_db, float, 0);
+    REG_STRUCT(struct_db, double, 0);
+}
+
+
 /* To search if the object is already present in the database */
 /* Returns the object if its present or else NULL             */
 object_db_rec_t *object_db_lookup(object_db_t *object_db, void *ptr)
@@ -257,10 +266,12 @@ void mld_explore_objects_recursively(object_db_t *object_db, object_db_rec_t *ob
     unsigned int i;
     while(object_rec)
     {
+        //printf("New struct - %p\n",object_rec);
         /* If the Parent object is an array */
         for(i=0;i<object_rec->units;i++)
         {
-            object_rec = object_rec->ptr + (i*object_rec->struct_rec->ds_size);
+            struct_db_rec_t *struct_rec = object_rec->struct_rec + i;
+            //printf("%p\n",object_rec);
 
             if(object_rec->is_visited == MLD_TRUE)
                 return;
@@ -268,9 +279,11 @@ void mld_explore_objects_recursively(object_db_t *object_db, object_db_rec_t *ob
             char *parent_obj_ptr = object_rec->ptr;
             void *child_object_address = NULL;
 
-            field_info_t *arr_fields = object_rec->struct_rec->fields;
+            //struct_db_rec_t *struct_rec = object_rec->struct_rec;
+            field_info_t *arr_fields = struct_rec->fields;
+            //printf("%p\n",object_rec);
 
-            int len = object_rec->struct_rec->n_fields;
+            int len = struct_rec->n_fields;
             for(int i=0;i<len;i++)
             {
                 field_info_t *struct_fields = arr_fields+(i);
@@ -285,7 +298,8 @@ void mld_explore_objects_recursively(object_db_t *object_db, object_db_rec_t *ob
 
                 object_db_rec_t *child_object_rec = object_db_lookup(object_db, child_object_address);
                 if(child_object_rec->is_visited == MLD_FALSE){
-                    child_object_rec->is_visited = MLD_TRUE;
+                    //child_object_rec->is_visited = MLD_TRUE;
+                    mld_explore_objects_recursively(object_db, child_object_rec);
                 }
                 
             }
@@ -313,4 +327,20 @@ void run_mld_algorithm(object_db_t *object_db)
         head = head->next;
     }
     return;
+}
+
+void report_leaked_objects(object_db_t *object_db){
+    int i = 0;
+    object_db_rec_t *head;
+
+    printf("Dumping Leaked Objects \n");
+
+    for(head = object_db->head; head; head=head->next)
+    {
+        if(!head->is_visited){
+            print_object_rec(head, i++);
+            mld_dump_object_rec_detail(head);
+            printf("\n\n");
+        }
+    }
 }

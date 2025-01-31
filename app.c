@@ -11,6 +11,7 @@ typedef struct emp_{
     unsigned int age;
     struct emp_ *mgr;
     float salary;
+    int *p;
 } emp_t;
 
 typedef struct student_{
@@ -26,6 +27,7 @@ int main(int argc, char**argv)
 {
     /* Step 1: Initialize a new structure database */
     struct_db_t *struct_db = calloc(1, sizeof(struct_db_t));
+    mld_init_primitive_data_types_support(struct_db);
 
     /* Create structure record for structure emp_t */
     static field_info_t emp_fields[] = {
@@ -33,7 +35,8 @@ int main(int argc, char**argv)
         FIELD_INFO(emp_t, emp_id,   UINT32,        0),
         FIELD_INFO(emp_t, age,      UINT32,        0),
         FIELD_INFO(emp_t, mgr,      OBJ_PTR,   emp_t),
-        FIELD_INFO(emp_t, salary,   FLOAT,         0)
+        FIELD_INFO(emp_t, salary,   FLOAT,         0),
+        FIELD_INFO(emp_t, p,        OBJ_PTR,       0)
     };
     REG_STRUCT(struct_db, emp_t, emp_fields);
 
@@ -57,25 +60,30 @@ int main(int argc, char**argv)
      * calloc(1, sizeof(student_t)                                  */
     student_t *ujjwal = xcalloc(object_db, "student_t", 1);
     student_t *simran = xcalloc(object_db, "student_t", 1);
-    emp_t *sneha = xcalloc(object_db, "emp_t", 2);
+    
 
     strncpy(ujjwal->stud_name, "ujjwal", strlen("ujjwal"));
     ujjwal->age = 23;
     ujjwal->aggregate = 99;
-    ujjwal->best_college = NULL;
+    //ujjwal->best_college = simran;
     ujjwal->roll_no = 29;
+    mld_set_dynamic_object_as_root(object_db, ujjwal);
 
     strncpy(simran->stud_name, "simran", strlen("simran"));
     simran->age = 23;
     simran->aggregate = 99;
     simran->best_college = NULL;
     simran->roll_no = 29;
+
+    emp_t *sneha = xcalloc(object_db, "emp_t", 2);
+    //mld_set_dynamic_object_as_root(object_db, sneha);
+    sneha->p = xcalloc(object_db, "int", 1);
+    sneha->p = NULL;
     
     print_object_db(object_db);
-    xfree(object_db, ujjwal);
-    printf("\n");
-    print_object_db(object_db);
-    xfree(object_db, sneha);
-    print_object_db(object_db);
+    
+    run_mld_algorithm(object_db);
+    printf("Leaked Objects : \n");
+    report_leaked_objects(object_db);
     return 0;
 }
