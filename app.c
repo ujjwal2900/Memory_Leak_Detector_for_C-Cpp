@@ -62,14 +62,14 @@ int main(int argc, char**argv)
     student_t *simran = xcalloc(object_db, "student_t", 1);
     
 
-    strncpy(ujjwal->stud_name, "ujjwal", strlen("ujjwal"));
+    memcpy(ujjwal->stud_name, "ujjwal", strlen("ujjwal"));
     ujjwal->age = 23;
     ujjwal->aggregate = 99;
     //ujjwal->best_college = simran;
     ujjwal->roll_no = 29;
     mld_set_dynamic_object_as_root(object_db, ujjwal);
 
-    strncpy(simran->stud_name, "simran", strlen("simran"));
+    memcpy(simran->stud_name, "simran", strlen("simran"));
     simran->age = 23;
     simran->aggregate = 99;
     simran->best_college = NULL;
@@ -82,6 +82,7 @@ int main(int argc, char**argv)
     
     print_object_db(object_db);
     
+    printf("\n--------------------------------------Leaked Objects Deatails--------------------------------------\n");
     run_mld_algorithm(object_db);
     printf("Leaked Objects : \n");
     report_leaked_objects(object_db);

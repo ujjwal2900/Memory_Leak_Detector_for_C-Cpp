@@ -162,36 +162,47 @@ void print_object_db(object_db_t *object_db)
     }
 }
 
-void print_data_type(void *ptr, field_info_t *struct_fields)
-{
-    if(struct_fields->dtype>=0 && struct_fields->dtype<=2)
-        printf("%lu", (unsigned long)(ptr+struct_fields->offset));
-    else if(struct_fields->dtype == 3)
-        printf("%s", ptr+struct_fields->offset);
-    else if(struct_fields->dtype == 5 || struct_fields->dtype == 6)
-        printf("%lu", (unsigned long)(ptr+struct_fields->offset));
-    else
-        printf("%s", ptr+struct_fields->offset);
-    printf("\n");
-}
-
 /* Print all supported fields by mld library for the object record passed as argument */
 void mld_dump_object_rec_detail(object_db_rec_t *obj_rec)
 {
-    struct_db_rec_t *struct_rec = obj_rec->struct_rec;
-    unsigned units = obj_rec->units;
-    void *ptr = obj_rec->ptr;
-    
-    for(int i=0;i<units;i++)
-    {
-        void *ptr2 = ptr+(i);
-        field_info_t *arr_fields = struct_rec->fields;
-        //field_info_t *struct_fields = arr_fields+(i);
-        for(int j=0;j<struct_rec->n_fields;j++)
-        {
-            field_info_t *struct_fields = arr_fields+(j);
-            //printf("%s \n", ptr2+struct_fields->offset);
-            print_data_type(ptr2, struct_fields);
+    int n_fields = obj_rec->struct_rec->n_fields;
+    field_info_t *field = NULL;
+
+    int units = obj_rec->units, obj_index = 0,
+        field_index = 0;
+
+    for(; obj_index < units; obj_index++){
+        char *current_object_ptr = (char *)(obj_rec->ptr) + \
+                        (obj_index * obj_rec->struct_rec->ds_size);
+
+        for(field_index = 0; field_index < n_fields; field_index++){
+            
+            field = &obj_rec->struct_rec->fields[field_index];
+
+            switch(field->dtype){
+                case UINT8:
+                case INT32:
+                case UINT32:
+                    printf("%s[%d]->%s = %d\n", obj_rec->struct_rec->struct_name, obj_index, field->fname, *(int *)(current_object_ptr + field->offset));
+                    break;
+                case CHAR:
+                    printf("%s[%d]->%s = %s\n", obj_rec->struct_rec->struct_name, obj_index, field->fname, (char *)(current_object_ptr + field->offset));
+                    break;
+                case FLOAT:
+                    printf("%s[%d]->%s = %f\n", obj_rec->struct_rec->struct_name, obj_index, field->fname, *(float *)(current_object_ptr + field->offset));
+                    break;
+                case DOUBLE:
+                    printf("%s[%d]->%s = %f\n", obj_rec->struct_rec->struct_name, obj_index, field->fname, *(double *)(current_object_ptr + field->offset));
+                    break;
+                case OBJ_PTR:
+                    printf("%s[%d]->%s = %p\n", obj_rec->struct_rec->struct_name, obj_index, field->fname,  (void *)*(long *)(current_object_ptr + field->offset));
+                    break;
+                case OBJ_STRUCT:
+                    /*Later*/
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
@@ -320,10 +331,11 @@ void run_mld_algorithm(object_db_t *object_db)
         head = head->next;
     }
 
+    printf("\n\n");
     head = object_db->head;
     while(head){
         if(head->is_visited == MLD_FALSE)
-            printf("Leadked object - %s",head->struct_rec->struct_name);
+            printf("Leadked object - %s\n",head->struct_rec->struct_name);
         head = head->next;
     }
     return;
@@ -333,7 +345,7 @@ void report_leaked_objects(object_db_t *object_db){
     int i = 0;
     object_db_rec_t *head;
 
-    printf("Dumping Leaked Objects \n");
+    printf("\nDumping Leaked Objects \n");
 
     for(head = object_db->head; head; head=head->next)
     {
